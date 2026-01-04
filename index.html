@@ -331,6 +331,9 @@
                     </div>
 
                     <button id="encrypt-btn" class="btn-primary">Generate Secure Link</button>
+                    <p id="create-error-msg"
+                        style="color: #ef4444; margin-top: 1rem; text-align: center; font-size: 0.9rem;" class="hidden">
+                    </p>
                 </div>
 
                 <div id="result-area" class="result-container hidden" style="flex-direction: column;">
@@ -430,6 +433,13 @@
                 showCreateView();
             });
 
+            // Clear errors on input
+            ['secret-content', 'encryption-password'].forEach(id => {
+                document.getElementById(id).addEventListener('input', () => {
+                    document.getElementById('create-error-msg').classList.add('hidden');
+                });
+            });
+
             const copyDecryptedBtn = document.getElementById('copy-decrypted-btn');
             if (copyDecryptedBtn) {
                 copyDecryptedBtn.addEventListener('click', () => {
@@ -471,6 +481,7 @@
             // Ensure inputs are visible and result is hidden when returning to create view
             document.getElementById('create-inputs-wrapper').classList.remove('hidden');
             document.getElementById('result-area').classList.add('hidden');
+            document.getElementById('create-error-msg').classList.add('hidden');
         }
 
         function showDecryptView(hash) {
@@ -499,12 +510,12 @@
             const password = document.getElementById('encryption-password').value;
 
             if (!content) {
-                alert('Please enter a link to encrypt.');
+                showCreateError('Please enter a link to encrypt.');
                 return;
             }
 
             if (!password) {
-                alert('Please enter a password completely.');
+                showCreateError('Please enter a password.');
                 document.getElementById('encryption-password').focus();
                 return;
             }
@@ -513,6 +524,7 @@
             const originalText = btn.innerText;
             btn.innerText = 'Encrypting...';
             btn.disabled = true;
+            document.getElementById('create-error-msg').classList.add('hidden');
 
             try {
                 const encryptedData = await encryptData(content, password);
@@ -542,11 +554,17 @@
 
             } catch (error) {
                 console.error("Encryption failed:", error);
-                alert("Encryption failed. See console for details.");
+                showCreateError("Encryption failed. See console for details.");
             } finally {
                 btn.innerText = originalText;
                 btn.disabled = false;
             }
+        }
+
+        function showCreateError(msg) {
+            const el = document.getElementById('create-error-msg');
+            el.textContent = msg;
+            el.classList.remove('hidden');
         }
 
         async function handleDecrypt() {
