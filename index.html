@@ -1,0 +1,601 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SecretLinks - Secure Client-Side Sharing</title>
+    <meta name="description" content="Share encrypted secrets securely with no server-side storage.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* Bare Bones Theme */
+        :root {
+            --bg-page: #0f0f0f;
+            --fg-primary: #e0e0e0;
+            --fg-secondary: #a0a0a0;
+            --accent: #ffffff;
+
+            --border: #333333;
+            --input-bg: #1a1a1a;
+
+            --radius: 4px;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+            background-color: var(--bg-page);
+            color: var(--fg-primary);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            line-height: 1.5;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 480px;
+            padding: 1rem;
+        }
+
+        /* Minimal Card (No "Card" look, just layout) */
+        .glass-card {
+            /* Previously glass styling, now reset */
+            background: transparent;
+            border: none;
+            box-shadow: none;
+            padding: 0;
+        }
+
+        /* Typography */
+        h1 {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 0.25rem;
+            color: var(--fg-primary);
+            letter-spacing: -0.5px;
+        }
+
+        .subtitle {
+            color: var(--fg-secondary);
+            font-size: 0.875rem;
+            margin-bottom: 2rem;
+        }
+
+        /* Forms */
+        .input-group {
+            margin-bottom: 1.5rem;
+        }
+
+        label {
+            display: block;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            font-weight: 600;
+            color: var(--fg-secondary);
+            margin-bottom: 0.5rem;
+        }
+
+        textarea,
+        input[type="text"],
+        input[type="password"],
+        input[type="url"] {
+            width: 100%;
+            padding: 0.75rem;
+            background: var(--input-bg);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            color: var(--fg-primary);
+            font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, Courier, monospace;
+            font-size: 0.9rem;
+            outline: none;
+        }
+
+        textarea:focus,
+        input:focus {
+            border-color: var(--fg-primary);
+            background: #222;
+        }
+
+        textarea {
+            min-height: 100px;
+            resize: vertical;
+        }
+
+        /* Password Toggle */
+        .password-wrapper {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
+        .password-wrapper input {
+            padding-right: 3rem;
+        }
+
+        .toggle-password {
+            position: absolute;
+            right: 0.5rem;
+            background: transparent;
+            border: none;
+            color: var(--fg-secondary);
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .toggle-password:hover {
+            color: var(--fg-primary);
+        }
+
+        /* Button */
+        .btn-primary {
+            width: 100%;
+            padding: 0.75rem;
+            background: var(--fg-primary);
+            color: var(--bg-page);
+            border: 1px solid var(--fg-primary);
+            border-radius: var(--radius);
+            font-weight: 600;
+            font-size: 0.9rem;
+            font-family: inherit;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .btn-primary:hover {
+            background: transparent;
+            color: var(--fg-primary);
+        }
+
+        .btn-primary:active {
+            transform: translateY(1px);
+        }
+
+        .btn-primary:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        /* Secondary Button (Create New) */
+        #create-new-btn {
+            background: transparent;
+            border: 1px solid var(--border);
+            color: var(--fg-primary);
+            margin-top: 1.5rem;
+        }
+
+        #create-new-btn:hover {
+            border-color: var(--fg-secondary);
+        }
+
+        /* Result Area */
+        .result-container {
+            margin-top: 1.5rem;
+            display: flex;
+            gap: 0.5rem;
+            align-items: stretch;
+        }
+
+        .result-input {
+            background: var(--input-bg);
+            border: 1px solid var(--border);
+            color: var(--fg-primary);
+            padding: 0.5rem;
+            font-size: 0.8rem;
+            flex: 1;
+            border-radius: var(--radius);
+        }
+
+        #copy-btn {
+            width: auto;
+            white-space: nowrap;
+        }
+
+        /* Decrypted Content */
+        #decrypted-content {
+            padding: 1rem;
+            background: var(--input-bg);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            word-break: break-all;
+            font-family: monospace;
+        }
+
+        #decrypted-link {
+            color: var(--accent);
+            text-decoration: underline;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        #error-msg {
+            color: #ff4444;
+            margin-top: 1rem;
+            text-align: center;
+            font-size: 0.85rem;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container animate-fade-in">
+        <div class="glass-card">
+            <header>
+                <h1>SecretLinks</h1>
+                <p class="subtitle">Secure, client-side encryption.<br>Your data never leaves your browser.</p>
+            </header>
+
+            <!-- CREATION VIEW -->
+            <div id="create-view">
+                <div class="input-group">
+                    <label for="secret-content">Link to Encrypt</label>
+                    <input type="url" id="secret-content" placeholder="https://example.com/sensitive-doc" required>
+                </div>
+
+                <div class="input-group">
+                    <label for="encryption-password">Password (Required)</label>
+                    <div class="password-wrapper">
+                        <input type="password" id="encryption-password" placeholder="Enter a secure password" required>
+                        <button type="button" class="toggle-password" data-target="encryption-password">Show</button>
+                    </div>
+                </div>
+
+                <button id="encrypt-btn" class="btn-primary">Generate Secure Link</button>
+
+                <div id="result-area" class="result-container hidden">
+                    <input type="text" id="share-link" class="result-input" readonly>
+                    <button id="copy-btn" class="btn-primary"
+                        style="width: auto; padding: 0.5rem 1rem; font-size: 0.875rem;">Copy</button>
+                </div>
+            </div>
+
+            <!-- DECRYPTION VIEW -->
+            <div id="decrypt-view" class="hidden">
+                <div class="input-group">
+                    <label for="decryption-password">Enter Password to Unlock</label>
+                    <div class="password-wrapper">
+                        <input type="password" id="decryption-password" placeholder="Password required">
+                        <button type="button" class="toggle-password" data-target="decryption-password">Show</button>
+                    </div>
+                </div>
+
+                <button id="decrypt-btn" class="btn-primary">Decrypt Link</button>
+
+                <div id="decrypted-content-area" class="input-group hidden" style="margin-top: 1.5rem;">
+                    <label>Decrypted Link</label>
+                    <div style="display: flex; gap: 0.5rem; align-items: stretch;">
+                        <div id="decrypted-content"
+                            style="flex: 1; padding: 1rem; background: var(--input-bg); border: 1px solid var(--border); border-radius: var(--radius); word-break: break-all;">
+                            <a id="decrypted-link" href="#" target="_blank"
+                                style="color: var(--accent); text-decoration: underline;"></a>
+                        </div>
+                        <button id="copy-decrypted-btn" class="btn-primary"
+                            style="width: auto; white-space: nowrap;">Copy</button>
+                    </div>
+                </div>
+
+                <p id="error-msg" style="color: #ef4444; margin-top: 1rem; text-align: center; font-size: 0.9rem;"
+                    class="hidden"></p>
+
+                <button id="create-new-btn"
+                    style="margin-top: 2rem; background: transparent; border: 1px solid var(--border-subtle); color: var(--fg-secondary);"
+                    class="btn-primary">Create Your Own</button>
+            </div>
+        </div>
+    </div>
+    <script>
+        /**
+         * SecretLinks - Client-side Encryption Utility
+         */
+
+        document.addEventListener('DOMContentLoaded', init);
+
+        function init() {
+            const hash = window.location.hash.substring(1); // Remove '#'
+
+            if (hash) {
+                showDecryptView(hash);
+            } else {
+                showCreateView();
+            }
+
+            setupEventListeners();
+        }
+
+        function setupEventListeners() {
+            document.getElementById('encrypt-btn').addEventListener('click', handleEncrypt);
+            document.getElementById('decrypt-btn').addEventListener('click', handleDecrypt);
+            document.getElementById('copy-btn').addEventListener('click', copyToClipboard);
+            document.getElementById('create-new-btn').addEventListener('click', () => {
+                window.location.hash = '';
+                showCreateView();
+            });
+
+            const copyDecryptedBtn = document.getElementById('copy-decrypted-btn');
+            if (copyDecryptedBtn) {
+                copyDecryptedBtn.addEventListener('click', () => {
+                    const link = document.getElementById('decrypted-link').href;
+                    navigator.clipboard.writeText(link).then(() => {
+                        const originalText = copyDecryptedBtn.innerText;
+                        copyDecryptedBtn.innerText = 'Copied!';
+                        setTimeout(() => copyDecryptedBtn.innerText = originalText, 2000);
+                    });
+                });
+            }
+
+            document.querySelectorAll('.toggle-password').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const targetId = e.target.getAttribute('data-target');
+                    const input = document.getElementById(targetId);
+                    if (input.type === 'password') {
+                        input.type = 'text';
+                        e.target.innerText = 'Hide';
+                    } else {
+                        input.type = 'password';
+                        e.target.innerText = 'Show';
+                    }
+                });
+            });
+        }
+
+        function showCreateView() {
+            document.getElementById('create-view').classList.remove('hidden');
+            document.getElementById('decrypt-view').classList.add('hidden');
+        }
+
+        function showDecryptView(hash) {
+            document.getElementById('create-view').classList.add('hidden');
+            document.getElementById('decrypt-view').classList.remove('hidden');
+            // Store hash for decryption logic later
+            window.currentHash = hash;
+        }
+
+        const CONFIG = {
+            SEARCH_PARAM: 'd', // URL parameter key
+            PBKDF2_ITERATIONS: 100000,
+            SALT_LENGTH: 16,
+            IV_LENGTH: 12
+        };
+
+        async function handleEncrypt() {
+            const content = document.getElementById('secret-content').value;
+            const password = document.getElementById('encryption-password').value;
+
+            if (!content) {
+                alert('Please enter a link to encrypt.');
+                return;
+            }
+
+            if (!password) {
+                alert('Please enter a password completely.');
+                document.getElementById('encryption-password').focus();
+                return;
+            }
+
+            const btn = document.getElementById('encrypt-btn');
+            const originalText = btn.innerText;
+            btn.innerText = 'Encrypting...';
+            btn.disabled = true;
+
+            try {
+                const encryptedData = await encryptData(content, password);
+
+                // Create Share Link
+                // We put data in the hash to avoid sending it to server even in access logs (though fragments aren't sent usually)
+                // Structure: #<base64_data>
+                const shareLink = `${window.location.origin}${window.location.pathname}#${encryptedData}`;
+
+                const resultArea = document.getElementById('result-area');
+                const linkInput = document.getElementById('share-link');
+
+                resultArea.classList.remove('hidden');
+                linkInput.value = shareLink;
+
+                // Auto-copy to clipboard
+                navigator.clipboard.writeText(shareLink).then(() => {
+                    const copyBtn = document.getElementById('copy-btn');
+                    const originalText = copyBtn.innerText;
+                    copyBtn.innerText = 'Copied!';
+                    setTimeout(() => copyBtn.innerText = originalText, 2000);
+                }).catch(err => {
+                    console.error('Auto-copy failed:', err);
+                });
+
+            } catch (error) {
+                console.error("Encryption failed:", error);
+                alert("Encryption failed. See console for details.");
+            } finally {
+                btn.innerText = originalText;
+                btn.disabled = false;
+            }
+        }
+
+        async function handleDecrypt() {
+            const password = document.getElementById('decryption-password').value;
+            const hash = window.currentHash;
+
+            if (!password) {
+                showError("Please enter the password.");
+                return;
+            }
+
+            const btn = document.getElementById('decrypt-btn');
+            btn.innerText = 'Decrypting...';
+            btn.disabled = true;
+            document.getElementById('error-msg').classList.add('hidden');
+
+            try {
+                const decryptedContent = await decryptData(hash, password);
+
+                const contentArea = document.getElementById('decrypted-content-area');
+                const linkEl = document.getElementById('decrypted-link');
+
+                linkEl.href = decryptedContent;
+                linkEl.textContent = decryptedContent;
+                contentArea.classList.remove('hidden');
+
+            } catch (error) {
+                console.error("Decryption failed:", error);
+                showError("Incorrect password or corrupted link.");
+            } finally {
+                btn.innerText = 'Decrypt Link';
+                btn.disabled = false;
+            }
+        }
+
+        function showError(msg) {
+            const el = document.getElementById('error-msg');
+            el.textContent = msg;
+            el.classList.remove('hidden');
+        }
+
+        function generateRandomPassword() {
+            const chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+            let pass = "";
+            const randomValues = new Uint32Array(12);
+            window.crypto.getRandomValues(randomValues);
+            for (let i = 0; i < 12; i++) {
+                pass += chars[randomValues[i] % chars.length];
+            }
+            return pass;
+        }
+
+        // --- Crypto Utils ---
+
+        async function encryptData(text, password) {
+            const enc = new TextEncoder();
+
+            // 1. Generate Salt
+            const salt = window.crypto.getRandomValues(new Uint8Array(CONFIG.SALT_LENGTH));
+
+            // 2. Derive Key
+            const key = await deriveKey(password, salt);
+
+            // 3. Generate IV
+            const iv = window.crypto.getRandomValues(new Uint8Array(CONFIG.IV_LENGTH));
+
+            // 4. Encrypt
+            const ciphertext = await window.crypto.subtle.encrypt(
+                { name: "AES-GCM", iv: iv },
+                key,
+                enc.encode(text)
+            );
+
+            // 5. Pack (Salt + IV + Ciphertext)
+            const bundle = new Uint8Array(salt.length + iv.length + ciphertext.byteLength);
+            bundle.set(salt, 0);
+            bundle.set(iv, salt.length);
+            bundle.set(new Uint8Array(ciphertext), salt.length + iv.length);
+
+            // 6. Encode Base64Url
+            return arrayBufferToBase64Url(bundle);
+        }
+
+        async function decryptData(base64Str, password) {
+            const bundle = base64UrlToArrayBuffer(base64Str);
+
+            // Extract parts
+            if (bundle.byteLength < CONFIG.SALT_LENGTH + CONFIG.IV_LENGTH) {
+                throw new Error("Invalid data length");
+            }
+
+            const salt = bundle.slice(0, CONFIG.SALT_LENGTH);
+            const iv = bundle.slice(CONFIG.SALT_LENGTH, CONFIG.SALT_LENGTH + CONFIG.IV_LENGTH);
+            const ciphertext = bundle.slice(CONFIG.SALT_LENGTH + CONFIG.IV_LENGTH);
+
+            // Derive Key
+            const key = await deriveKey(password, salt);
+
+            // Decrypt
+            const dec = new TextDecoder();
+            const decrypted = await window.crypto.subtle.decrypt(
+                { name: "AES-GCM", iv: iv },
+                key,
+                ciphertext
+            );
+
+            return dec.decode(decrypted);
+        }
+
+        async function deriveKey(password, salt) {
+            const enc = new TextEncoder();
+            const keyMaterial = await window.crypto.subtle.importKey(
+                "raw",
+                enc.encode(password),
+                { name: "PBKDF2" },
+                false,
+                ["deriveKey"]
+            );
+
+            return window.crypto.subtle.deriveKey(
+                {
+                    name: "PBKDF2",
+                    salt: salt,
+                    iterations: CONFIG.PBKDF2_ITERATIONS,
+                    hash: "SHA-256"
+                },
+                keyMaterial,
+                { name: "AES-GCM", length: 256 },
+                false,
+                ["encrypt", "decrypt"]
+            );
+        }
+
+        function arrayBufferToBase64Url(buffer) {
+            let binary = '';
+            const bytes = new Uint8Array(buffer);
+            for (let i = 0; i < bytes.byteLength; i++) {
+                binary += String.fromCharCode(bytes[i]);
+            }
+            return btoa(binary)
+                .replace(/\+/g, '-')
+                .replace(/\//g, '_')
+                .replace(/=+$/, '');
+        }
+
+        function base64UrlToArrayBuffer(base64Url) {
+            const base64 = base64Url
+                .replace(/-/g, '+')
+                .replace(/_/g, '/');
+            const padLen = (4 - (base64.length % 4)) % 4;
+            const padded = base64 + '='.repeat(padLen);
+
+            const binary = atob(padded);
+            const bytes = new Uint8Array(binary.length);
+            for (let i = 0; i < binary.length; i++) {
+                bytes[i] = binary.charCodeAt(i);
+            }
+            return bytes.buffer;
+        }
+
+        function copyToClipboard() {
+            const linkInput = document.getElementById('share-link');
+
+            linkInput.select();
+            navigator.clipboard.writeText(linkInput.value).then(() => {
+                const btn = document.getElementById('copy-btn');
+                const originalText = btn.innerText;
+                btn.innerText = 'Copied!';
+                setTimeout(() => btn.innerText = originalText, 2000);
+            });
+        }
+    </script>
+</body>
+
+</html>
