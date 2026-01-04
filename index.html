@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SecretLinks - Secure Client-Side Sharing</title>
+    <title>SecretLinks - Share password encrypted links</title>
     <meta name="description" content="Share encrypted secrets securely with no server-side storage.">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -306,50 +306,61 @@
 <body>
     <div class="container animate-fade-in">
         <div class="glass-card">
-            <header style="text-align: center;">
+            <header style="text-align: center; margin-bottom: 2rem;">
                 <h1>SecretLinks</h1>
-                <p class="subtitle">Secure, client-side encryption.<br>Your data never leaves your browser.</p>
-                <button id="about-btn" class="header-link" style="background:none; border:none; padding:0;">How does
-                    this work?</button>
+                <p class="subtitle">Encrypt and share links securely.<br>Password-protected, client-side, and private.
+                </p>
             </header>
 
             <!-- CREATION VIEW -->
             <div id="create-view">
-                <div class="input-group">
-                    <label for="secret-content">Link to Encrypt</label>
-                    <input type="url" id="secret-content" placeholder="Enter a URL" required>
-                </div>
-
-                <div class="input-group">
-                    <label for="encryption-password">Password (Required)</label>
-                    <div class="password-wrapper">
-                        <input type="password" id="encryption-password" placeholder="Enter a secure password" required>
-                        <button type="button" class="toggle-password" data-target="encryption-password">Show</button>
+                <div id="create-inputs-wrapper">
+                    <div class="input-group">
+                        <label for="secret-content">Link to Encrypt</label>
+                        <input type="url" id="secret-content" placeholder="Enter a URL" required>
                     </div>
+
+                    <div class="input-group">
+                        <label for="encryption-password">Password (Required)</label>
+                        <div class="password-wrapper">
+                            <input type="password" id="encryption-password" placeholder="Enter a secure password"
+                                required>
+                            <button type="button" class="toggle-password"
+                                data-target="encryption-password">Show</button>
+                        </div>
+                    </div>
+
+                    <button id="encrypt-btn" class="btn-primary">Generate Secure Link</button>
                 </div>
 
-                <button id="encrypt-btn" class="btn-primary">Generate Secure Link</button>
-
-                <div id="result-area" class="result-container hidden">
-                    <input type="text" id="share-link" class="result-input" readonly>
-                    <button id="copy-btn" class="btn-primary"
-                        style="width: auto; padding: 0.5rem 1rem; font-size: 0.875rem;">Copy</button>
-                    <button id="open-btn" class="btn-primary"
-                        style="width: auto; padding: 0.5rem 1rem; font-size: 0.875rem;">Open</button>
+                <div id="result-area" class="result-container hidden" style="flex-direction: column;">
+                    <div style="display: flex; gap: 0.5rem; width: 100%;">
+                        <input type="text" id="share-link" class="result-input" readonly>
+                        <button id="copy-btn" class="btn-primary"
+                            style="width: auto; padding: 0.5rem 1rem; font-size: 0.875rem;">Copy</button>
+                        <button id="open-btn" class="btn-primary"
+                            style="width: auto; padding: 0.5rem 1rem; font-size: 0.875rem;">Open</button>
+                    </div>
+                    <button id="create-another-btn" class="btn-primary"
+                        style="margin-top: 1rem; background: transparent; border: 1px solid var(--border-subtle); color: var(--fg-secondary);">Generate
+                        Another</button>
                 </div>
             </div>
 
             <!-- DECRYPTION VIEW -->
             <div id="decrypt-view" class="hidden">
-                <div class="input-group">
-                    <label for="decryption-password">Enter Password to Unlock</label>
-                    <div class="password-wrapper">
-                        <input type="password" id="decryption-password" placeholder="Password required">
-                        <button type="button" class="toggle-password" data-target="decryption-password">Show</button>
+                <div id="decrypt-inputs-wrapper">
+                    <div class="input-group">
+                        <label for="decryption-password">Enter Password to Unlock</label>
+                        <div class="password-wrapper">
+                            <input type="password" id="decryption-password" placeholder="Password required">
+                            <button type="button" class="toggle-password"
+                                data-target="decryption-password">Show</button>
+                        </div>
                     </div>
-                </div>
 
-                <button id="decrypt-btn" class="btn-primary">Decrypt Link</button>
+                    <button id="decrypt-btn" class="btn-primary">Decrypt Link</button>
+                </div>
 
                 <div id="decrypted-content-area" class="input-group hidden" style="margin-top: 1.5rem;">
                     <label>Decrypted Link</label>
@@ -374,26 +385,6 @@
         </div>
     </div>
 
-    <!-- ABOUT MODAL -->
-    <div id="about-modal" class="modal-overlay hidden">
-        <div class="modal-content animate-fade-in">
-            <button id="close-about" class="modal-close">&times;</button>
-            <div class="modal-body">
-                <h2>How SecretLinks Works</h2>
-                <p>SecretLinks is a secure way to share sensitive information. Here is the security model:</p>
-                <ul>
-                    <li><strong>Client-Side Encryption:</strong> Your data is encrypted in your browser using AES-GCM
-                        256-bit encryption before it ever leaves your device.</li>
-                    <li><strong>No Database:</strong> We do not store your secrets. The encrypted data is encoded
-                        directly into the shareable link itself (in the URL hash).</li>
-                    <li><strong>The Link is the Key:</strong> Since we don't store your data, we cannot recover it if
-                        you lose the link or password.</li>
-                </ul>
-                <p>Because the data is in the URL hash (part after the #), it is never sent to our server in standard
-                    HTTP requests, ensuring complete privacy.</p>
-            </div>
-        </div>
-    </div>
     <script>
         /**
          * SecretLinks - Client-side Encryption Utility
@@ -423,21 +414,17 @@
         }
 
         function setupEventListeners() {
-            // About Modal
-            const modal = document.getElementById('about-modal');
-            document.getElementById('about-btn').addEventListener('click', () => {
-                modal.classList.remove('hidden');
-            });
-            document.getElementById('close-about').addEventListener('click', () => {
-                modal.classList.add('hidden');
-            });
-            modal.addEventListener('click', (e) => {
-                if (e.target === modal) modal.classList.add('hidden');
-            });
 
             document.getElementById('encrypt-btn').addEventListener('click', handleEncrypt);
             document.getElementById('decrypt-btn').addEventListener('click', handleDecrypt);
             document.getElementById('copy-btn').addEventListener('click', copyToClipboard);
+            document.getElementById('create-another-btn').addEventListener('click', () => {
+                // Return to clean state
+                document.getElementById('secret-content').value = '';
+                document.getElementById('encryption-password').value = '';
+                document.getElementById('create-inputs-wrapper').classList.remove('hidden');
+                document.getElementById('result-area').classList.add('hidden');
+            });
             document.getElementById('create-new-btn').addEventListener('click', () => {
                 window.location.hash = '';
                 showCreateView();
@@ -480,11 +467,22 @@
         function showCreateView() {
             document.getElementById('create-view').classList.remove('hidden');
             document.getElementById('decrypt-view').classList.add('hidden');
+
+            // Ensure inputs are visible and result is hidden when returning to create view
+            document.getElementById('create-inputs-wrapper').classList.remove('hidden');
+            document.getElementById('result-area').classList.add('hidden');
         }
 
         function showDecryptView(hash) {
             document.getElementById('create-view').classList.add('hidden');
             document.getElementById('decrypt-view').classList.remove('hidden');
+
+            // Reset state
+            document.getElementById('decrypt-inputs-wrapper').classList.remove('hidden');
+            document.getElementById('decrypted-content-area').classList.add('hidden');
+            document.getElementById('error-msg').classList.add('hidden');
+            document.getElementById('decryption-password').value = '';
+
             // Store hash for decryption logic later
             window.currentHash = hash;
         }
@@ -526,7 +524,9 @@
 
                 const resultArea = document.getElementById('result-area');
                 const linkInput = document.getElementById('share-link');
+                const inputsWrapper = document.getElementById('create-inputs-wrapper');
 
+                inputsWrapper.classList.add('hidden');
                 resultArea.classList.remove('hidden');
                 linkInput.value = shareLink;
 
@@ -567,15 +567,20 @@
                 const decryptedContent = await decryptData(hash, password);
                 const contentArea = document.getElementById('decrypted-content-area');
                 const linkEl = document.getElementById('decrypted-link');
+                const inputsWrapper = document.getElementById('decrypt-inputs-wrapper');
 
                 let finalLink = decryptedContent;
-                if (!/^https?:\/\//i.test(finalLink)) {
-                    finalLink = 'https://' + finalLink;
+                // Check if it has a scheme (e.g. http:, https:, ftp:, mailto:)
+                if (!/^[a-z][a-z0-9+.-]*:/i.test(finalLink)) {
+                    // Default to http:// for bare domains to allow for maximum compatibility (server can upgrade to HTTPS)
+                    // This mimics browser address bar behavior better than forcing HTTPS or relative //
+                    finalLink = 'http://' + finalLink;
                 }
 
                 linkEl.href = finalLink;
                 linkEl.textContent = decryptedContent;
                 contentArea.classList.remove('hidden');
+                inputsWrapper.classList.add('hidden');
 
             } catch (error) {
                 console.error("Decryption failed:", error);
