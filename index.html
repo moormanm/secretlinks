@@ -230,22 +230,94 @@
             text-align: center;
             font-size: 0.85rem;
         }
+
+        /* Modal */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(4px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        .modal-content {
+            background: var(--bg-page);
+            border: 1px solid var(--border);
+            padding: 2rem;
+            border-radius: var(--radius);
+            max-width: 500px;
+            width: 90%;
+            position: relative;
+        }
+
+        .modal-close {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            background: transparent;
+            border: none;
+            color: var(--fg-secondary);
+            font-size: 1.5rem;
+            line-height: 1;
+            cursor: pointer;
+        }
+
+        .modal-body h2 {
+            font-size: 1.25rem;
+            color: var(--fg-primary);
+            margin-bottom: 1rem;
+        }
+
+        .modal-body p {
+            font-size: 0.9rem;
+            color: var(--fg-secondary);
+            margin-bottom: 1rem;
+            line-height: 1.6;
+        }
+
+        .modal-body ul {
+            margin-left: 1.2rem;
+            margin-bottom: 1rem;
+            color: var(--fg-secondary);
+            font-size: 0.9rem;
+        }
+
+        .modal-body li {
+            margin-bottom: 0.5rem;
+        }
+
+        .header-link {
+            color: var(--fg-secondary);
+            font-size: 0.8rem;
+            text-decoration: underline;
+            cursor: pointer;
+            margin-top: 0.5rem;
+            display: inline-block;
+        }
     </style>
 </head>
 
 <body>
     <div class="container animate-fade-in">
         <div class="glass-card">
-            <header>
+            <header style="text-align: center;">
                 <h1>SecretLinks</h1>
                 <p class="subtitle">Secure, client-side encryption.<br>Your data never leaves your browser.</p>
+                <button id="about-btn" class="header-link" style="background:none; border:none; padding:0;">How does
+                    this work?</button>
             </header>
 
             <!-- CREATION VIEW -->
             <div id="create-view">
                 <div class="input-group">
                     <label for="secret-content">Link to Encrypt</label>
-                    <input type="url" id="secret-content" placeholder="https://example.com/sensitive-doc" required>
+                    <input type="url" id="secret-content" placeholder="Enter a URL" required>
                 </div>
 
                 <div class="input-group">
@@ -301,6 +373,27 @@
             </div>
         </div>
     </div>
+
+    <!-- ABOUT MODAL -->
+    <div id="about-modal" class="modal-overlay hidden">
+        <div class="modal-content animate-fade-in">
+            <button id="close-about" class="modal-close">&times;</button>
+            <div class="modal-body">
+                <h2>How SecretLinks Works</h2>
+                <p>SecretLinks is a secure way to share sensitive information. Here is the security model:</p>
+                <ul>
+                    <li><strong>Client-Side Encryption:</strong> Your data is encrypted in your browser using AES-GCM
+                        256-bit encryption before it ever leaves your device.</li>
+                    <li><strong>No Database:</strong> We do not store your secrets. The encrypted data is encoded
+                        directly into the shareable link itself (in the URL hash).</li>
+                    <li><strong>The Link is the Key:</strong> Since we don't store your data, we cannot recover it if
+                        you lose the link or password.</li>
+                </ul>
+                <p>Because the data is in the URL hash (part after the #), it is never sent to our server in standard
+                    HTTP requests, ensuring complete privacy.</p>
+            </div>
+        </div>
+    </div>
     <script>
         /**
          * SecretLinks - Client-side Encryption Utility
@@ -330,6 +423,18 @@
         }
 
         function setupEventListeners() {
+            // About Modal
+            const modal = document.getElementById('about-modal');
+            document.getElementById('about-btn').addEventListener('click', () => {
+                modal.classList.remove('hidden');
+            });
+            document.getElementById('close-about').addEventListener('click', () => {
+                modal.classList.add('hidden');
+            });
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) modal.classList.add('hidden');
+            });
+
             document.getElementById('encrypt-btn').addEventListener('click', handleEncrypt);
             document.getElementById('decrypt-btn').addEventListener('click', handleDecrypt);
             document.getElementById('copy-btn').addEventListener('click', copyToClipboard);
