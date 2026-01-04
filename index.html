@@ -310,6 +310,14 @@
         window.addEventListener('hashchange', init);
 
         function init() {
+            // Check for Web Crypto API support
+            if (!window.crypto || !window.crypto.subtle) {
+                const errorMsg = "Your browser does not support the Web Crypto API in this context.\n\nPlease use HTTPS or localhost. Some browsers block encryption on file:// URLs.";
+                alert(errorMsg);
+                document.body.innerHTML = `<div style="padding: 2rem; color: #ff4444; text-align: center;">${errorMsg.replace(/\n/g, '<br>')}</div>`;
+                return;
+            }
+
             const hash = window.location.hash.substring(1); // Remove '#'
 
             if (hash) {
@@ -451,6 +459,10 @@
             document.getElementById('error-msg').classList.add('hidden');
 
             try {
+                const decryptedContent = await decryptData(hash, password);
+                const contentArea = document.getElementById('decrypted-content-area');
+                const linkEl = document.getElementById('decrypted-link');
+
                 let finalLink = decryptedContent;
                 if (!/^https?:\/\//i.test(finalLink)) {
                     finalLink = 'https://' + finalLink;
