@@ -262,6 +262,8 @@
                     <input type="text" id="share-link" class="result-input" readonly>
                     <button id="copy-btn" class="btn-primary"
                         style="width: auto; padding: 0.5rem 1rem; font-size: 0.875rem;">Copy</button>
+                    <button id="open-btn" class="btn-primary"
+                        style="width: auto; padding: 0.5rem 1rem; font-size: 0.875rem;">Open</button>
                 </div>
             </div>
 
@@ -305,6 +307,7 @@
          */
 
         document.addEventListener('DOMContentLoaded', init);
+        window.addEventListener('hashchange', init);
 
         function init() {
             const hash = window.location.hash.substring(1); // Remove '#'
@@ -338,6 +341,13 @@
                     });
                 });
             }
+
+            document.getElementById('open-btn').addEventListener('click', () => {
+                const url = document.getElementById('share-link').value;
+                if (url) {
+                    window.open(url, '_blank');
+                }
+            });
 
             document.querySelectorAll('.toggle-password').forEach(btn => {
                 btn.addEventListener('click', (e) => {
@@ -441,12 +451,12 @@
             document.getElementById('error-msg').classList.add('hidden');
 
             try {
-                const decryptedContent = await decryptData(hash, password);
+                let finalLink = decryptedContent;
+                if (!/^https?:\/\//i.test(finalLink)) {
+                    finalLink = 'https://' + finalLink;
+                }
 
-                const contentArea = document.getElementById('decrypted-content-area');
-                const linkEl = document.getElementById('decrypted-link');
-
-                linkEl.href = decryptedContent;
+                linkEl.href = finalLink;
                 linkEl.textContent = decryptedContent;
                 contentArea.classList.remove('hidden');
 
@@ -586,6 +596,9 @@
 
         function copyToClipboard() {
             const linkInput = document.getElementById('share-link');
+            // linkInput.select(); // Removed logic repetition
+            // navigator.clipboard is used in handleEncrypt, but we also have copy button.
+            // Consolidating
 
             linkInput.select();
             navigator.clipboard.writeText(linkInput.value).then(() => {
