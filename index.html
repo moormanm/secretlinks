@@ -6,8 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SecretLinks - Share password encrypted links</title>
     <meta name="description" content="Share encrypted secrets securely with no server-side storage.">
-    <meta name="description" content="Share encrypted secrets securely with no server-side storage.">
-    <!-- Removed Google Fonts for privacy/offline support -->
+
     <style>
         /* Bare Bones Theme */
         :root {
@@ -651,14 +650,7 @@
 
             try {
                 const decryptedData = await decryptData(hash, password);
-                let payload;
-                try {
-                    payload = JSON.parse(decryptedData);
-                } catch (e) {
-                    // Fallback for non-JSON links (simple string legacy support)
-                    payload = { url: decryptedData, note: '' };
-                }
-
+                const payload = JSON.parse(decryptedData);
                 const contentArea = document.getElementById('decrypted-content-area');
                 const linkEl = document.getElementById('decrypted-link');
                 const noteContainer = document.getElementById('decrypted-note-container');
