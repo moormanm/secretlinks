@@ -322,6 +322,18 @@
                         </div>
 
                         <div class="input-group">
+                            <label for="secret-note">Optional Note</label>
+                            <textarea id="secret-note" placeholder="Add a secure message (optional)" rows="3"
+                                style="width: 100%; padding: 0.75rem; background: var(--input-bg); border: 1px solid var(--border); border-radius: var(--radius); color: var(--fg-primary); font-family: inherit; resize: vertical;"></textarea>
+                        </div>
+
+                        <div class="input-group">
+                            <label for="secret-note">Optional Note</label>
+                            <textarea id="secret-note" placeholder="Add a secure message (optional)" rows="3"
+                                style="width: 100%; padding: 0.75rem; background: var(--input-bg); border: 1px solid var(--border); border-radius: var(--radius); color: var(--fg-primary); font-family: inherit; resize: vertical;"></textarea>
+                        </div>
+
+                        <div class="input-group">
                             <label for="encryption-password">Password</label>
                             <div class="password-wrapper">
                                 <input type="password" id="encryption-password" placeholder="Enter a secure password"
@@ -381,6 +393,13 @@
                         <button id="copy-decrypted-btn" class="btn-primary"
                             style="width: auto; white-space: nowrap;">Copy</button>
                     </div>
+
+                    <div id="decrypted-note-container" class="hidden" style="margin-top: 1rem;">
+                        <label>Secure Note</label>
+                        <div id="decrypted-note"
+                            style="padding: 1rem; background: var(--input-bg); border: 1px solid var(--border); border-radius: var(--radius); white-space: pre-wrap; word-break: break-word;">
+                        </div>
+                    </div>
                 </div>
 
                 <p id="error-msg" style="color: #ef4444; margin-top: 1rem; text-align: center; font-size: 0.9rem;"
@@ -415,7 +434,10 @@
                         (the part after the #).</li>
                 </ul>
                 <p>Because the data is in the URL hash, it is never sent to any server in standard HTTP requests. The
-                    decryption key is derived from the password you prompt, and never stored.</p>
+                    decryption key is derived from the password you prompt, and never stored. The link never expires.
+                </p>
+                <p>Source code is available <a href="https://github.com/moormanm/secretlinks">here</a></p>
+                <p>Hosted by GitHub Pages with a custom domain.</p>
             </div>
         </div>
     </div>
@@ -468,6 +490,7 @@
             document.getElementById('create-another-btn').addEventListener('click', () => {
                 // Return to clean state
                 document.getElementById('secret-content').value = '';
+                document.getElementById('secret-note').value = '';
                 document.getElementById('encryption-password').value = '';
                 document.getElementById('create-inputs-wrapper').classList.remove('hidden');
                 document.getElementById('result-area').classList.add('hidden');
@@ -534,9 +557,9 @@
             document.getElementById('create-view').classList.add('hidden');
             document.getElementById('decrypt-view').classList.remove('hidden');
 
-            // Reset state
             document.getElementById('decrypt-inputs-wrapper').classList.remove('hidden');
             document.getElementById('decrypted-content-area').classList.add('hidden');
+            document.getElementById('decrypted-note-container').classList.add('hidden');
             document.getElementById('error-msg').classList.add('hidden');
             document.getElementById('decryption-password').value = '';
 
@@ -573,7 +596,13 @@
             document.getElementById('create-error-msg').classList.add('hidden');
 
             try {
-                const encryptedData = await encryptData(content, password);
+                const note = document.getElementById('secret-note').value;
+                const payload = JSON.stringify({
+                    url: content,
+                    note: note
+                });
+
+                const encryptedData = await encryptData(payload, password);
 
                 // Create Share Link
                 // We put data in the hash to avoid sending it to server even in access logs (though fragments aren't sent usually)
@@ -628,21 +657,37 @@
             document.getElementById('error-msg').classList.add('hidden');
 
             try {
-                const decryptedContent = await decryptData(hash, password);
+                const decryptedData = await decryptData(hash, password);
+                let payload;
+                try {
+                    payload = JSON.parse(decryptedData);
+                } catch (e) {
+                    // Fallback for non-JSON links (simple string legacy support)
+                    payload = { url: decryptedData, note: '' };
+                }
+
                 const contentArea = document.getElementById('decrypted-content-area');
                 const linkEl = document.getElementById('decrypted-link');
+                const noteContainer = document.getElementById('decrypted-note-container');
+                const noteEl = document.getElementById('decrypted-note');
                 const inputsWrapper = document.getElementById('decrypt-inputs-wrapper');
 
-                let finalLink = decryptedContent;
-                // Check if it has a scheme (e.g. http:, https:, ftp:, mailto:)
+                let finalLink = payload.url;
+                // Check if it has a scheme
                 if (!/^[a-z][a-z0-9+.-]*:/i.test(finalLink)) {
-                    // Default to http:// for bare domains to allow for maximum compatibility (server can upgrade to HTTPS)
-                    // This mimics browser address bar behavior better than forcing HTTPS or relative //
                     finalLink = 'http://' + finalLink;
                 }
 
                 linkEl.href = finalLink;
-                linkEl.textContent = decryptedContent;
+                linkEl.textContent = payload.url;
+
+                if (payload.note && payload.note.trim() !== "") {
+                    noteEl.textContent = payload.note;
+                    noteContainer.classList.remove('hidden');
+                } else {
+                    noteContainer.classList.add('hidden');
+                }
+
                 contentArea.classList.remove('hidden');
                 inputsWrapper.classList.add('hidden');
 
