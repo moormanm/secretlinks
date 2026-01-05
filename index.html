@@ -812,10 +812,6 @@
 
         function copyToClipboard() {
             const linkInput = document.getElementById('share-link');
-            // linkInput.select(); // Removed logic repetition
-            // navigator.clipboard is used in handleEncrypt, but we also have copy button.
-            // Consolidating
-
             linkInput.select();
             navigator.clipboard.writeText(linkInput.value).then(() => {
                 const btn = document.getElementById('copy-btn');
