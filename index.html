@@ -314,27 +314,30 @@
 
             <!-- CREATION VIEW -->
             <div id="create-view">
-                <div id="create-inputs-wrapper">
-                    <div class="input-group">
-                        <label for="secret-content">Link to Encrypt</label>
-                        <input type="url" id="secret-content" placeholder="Enter a URL" required>
-                    </div>
-
-                    <div class="input-group">
-                        <label for="encryption-password">Password (Required)</label>
-                        <div class="password-wrapper">
-                            <input type="password" id="encryption-password" placeholder="Enter a secure password"
-                                required>
-                            <button type="button" class="toggle-password"
-                                data-target="encryption-password">Show</button>
+                <form id="create-form" onsubmit="event.preventDefault(); return false;">
+                    <div id="create-inputs-wrapper">
+                        <div class="input-group">
+                            <label for="secret-content">Link to Encrypt</label>
+                            <input type="url" id="secret-content" placeholder="Enter a URL" required>
                         </div>
-                    </div>
 
-                    <button id="encrypt-btn" class="btn-primary">Generate Secure Link</button>
-                    <p id="create-error-msg"
-                        style="color: #ef4444; margin-top: 1rem; text-align: center; font-size: 0.9rem;" class="hidden">
-                    </p>
-                </div>
+                        <div class="input-group">
+                            <label for="encryption-password">Password</label>
+                            <div class="password-wrapper">
+                                <input type="password" id="encryption-password" placeholder="Enter a secure password"
+                                    required>
+                                <button type="button" class="toggle-password"
+                                    data-target="encryption-password">Show</button>
+                            </div>
+                        </div>
+
+                        <button id="encrypt-btn" type="submit" class="btn-primary">Generate Secure Link</button>
+                        <p id="create-error-msg"
+                            style="color: #ef4444; margin-top: 1rem; text-align: center; font-size: 0.9rem;"
+                            class="hidden">
+                        </p>
+                    </div>
+                </form>
 
                 <div id="result-area" class="result-container hidden" style="flex-direction: column;">
                     <div style="display: flex; gap: 0.5rem; width: 100%;">
@@ -352,18 +355,20 @@
 
             <!-- DECRYPTION VIEW -->
             <div id="decrypt-view" class="hidden">
-                <div id="decrypt-inputs-wrapper">
-                    <div class="input-group">
-                        <label for="decryption-password">Enter Password to Unlock</label>
-                        <div class="password-wrapper">
-                            <input type="password" id="decryption-password" placeholder="Password required">
-                            <button type="button" class="toggle-password"
-                                data-target="decryption-password">Show</button>
+                <form id="decrypt-form" onsubmit="event.preventDefault(); return false;">
+                    <div id="decrypt-inputs-wrapper">
+                        <div class="input-group">
+                            <label for="decryption-password">Enter Password to Unlock</label>
+                            <div class="password-wrapper">
+                                <input type="password" id="decryption-password" placeholder="Password required">
+                                <button type="button" class="toggle-password"
+                                    data-target="decryption-password">Show</button>
+                            </div>
                         </div>
-                    </div>
 
-                    <button id="decrypt-btn" class="btn-primary">Decrypt Link</button>
-                </div>
+                        <button id="decrypt-btn" type="submit" class="btn-primary">Decrypt Link</button>
+                    </div>
+                </form>
 
                 <div id="decrypted-content-area" class="input-group hidden" style="margin-top: 1.5rem;">
                     <label>Decrypted Link</label>
@@ -384,6 +389,33 @@
                 <button id="create-new-btn"
                     style="margin-top: 2rem; background: transparent; border: 1px solid var(--border-subtle); color: var(--fg-secondary);"
                     class="btn-primary">Create Your Own</button>
+            </div>
+        </div>
+    </div>
+    <footer style="margin-top: 2rem; text-align: center;">
+        <button id="about-btn" class="header-link"
+            style="background:none; border:none; padding:0; font-size: 0.8rem; color: var(--fg-secondary);">How it
+            works</button>
+    </footer>
+    </div>
+    <!-- ABOUT MODAL -->
+    <div id="about-modal" class="modal-overlay hidden">
+        <div class="modal-content animate-fade-in">
+            <button id="close-about" class="modal-close">&times;</button>
+            <div class="modal-body">
+                <h2>How SecretLinks Works</h2>
+                <p>SecretLinks is a secure way to share sensitive information. Here is the technical security model:</p>
+                <ul>
+                    <li><strong>Client-Side Encryption:</strong> Your data is encrypted in your browser using AES-GCM
+                        256-bit encryption. The plain-text data never leaves your device.</li>
+                    <li><strong>No Database / Serverless:</strong> This application is a single static HTML file hosted
+                        on GitHub Pages. There is no backend server and no database. We literally cannot see or store
+                        your secrets.</li>
+                    <li><strong>The Link is the Key:</strong> The encrypted data is encoded entirely into the URL hash
+                        (the part after the #).</li>
+                </ul>
+                <p>Because the data is in the URL hash, it is never sent to any server in standard HTTP requests. The
+                    decryption key is derived from the password you prompt, and never stored.</p>
             </div>
         </div>
     </div>
@@ -417,17 +449,31 @@
         }
 
         function setupEventListeners() {
+            // About Modal
+            const modal = document.getElementById('about-modal');
+            document.getElementById('about-btn').addEventListener('click', () => {
+                modal.classList.remove('hidden');
+            });
+            document.getElementById('close-about').addEventListener('click', () => {
+                modal.classList.add('hidden');
+            });
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) modal.classList.add('hidden');
+            });
 
             document.getElementById('encrypt-btn').addEventListener('click', handleEncrypt);
             document.getElementById('decrypt-btn').addEventListener('click', handleDecrypt);
             document.getElementById('copy-btn').addEventListener('click', copyToClipboard);
+
             document.getElementById('create-another-btn').addEventListener('click', () => {
                 // Return to clean state
                 document.getElementById('secret-content').value = '';
                 document.getElementById('encryption-password').value = '';
                 document.getElementById('create-inputs-wrapper').classList.remove('hidden');
                 document.getElementById('result-area').classList.add('hidden');
+                document.getElementById('create-error-msg').classList.add('hidden');
             });
+
             document.getElementById('create-new-btn').addEventListener('click', () => {
                 window.location.hash = '';
                 showCreateView();
